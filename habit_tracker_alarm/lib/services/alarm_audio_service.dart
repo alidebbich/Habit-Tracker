@@ -56,10 +56,9 @@ class AlarmAudioService {
         }
       }
 
-      // ── 2. Built-in raw Android resource ─────────────────────────────────
       if (_builtIn.contains(sound)) {
         await _player.play(
-          UrlSource('android.resource://$_pkg/raw/$sound'),
+          AssetSource('audio/$sound.wav'),
         );
         _isPlaying = true;
         return;
@@ -67,11 +66,10 @@ class AlarmAudioService {
 
       // ── 3. Ultimate fallback ─────────────────────────────────────────────
       await _player.play(
-        UrlSource('android.resource://$_pkg/raw/digital_beep'),
+        AssetSource('audio/digital_beep.wav'),
       );
       _isPlaying = true;
-    } catch (e) {
-      print('AlarmAudioService play error: $e');
+    } catch (_) {
       // Fail silently — the notification sound will still ring
     }
   }
@@ -93,7 +91,7 @@ class AlarmAudioService {
 
       if (_builtIn.contains(sound)) {
         await _player.play(
-          UrlSource('android.resource://$_pkg/raw/$sound'),
+          AssetSource('audio/$sound.wav'),
         );
         _isPlaying = true;
         return;
