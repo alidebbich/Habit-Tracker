@@ -15,8 +15,8 @@ class AlarmAudioService {
   /// Built-in sounds that live in android/app/src/main/res/raw/
   static const _builtIn = {'cinematic_rise', 'gentle_bells', 'digital_beep'};
 
-  /// The Android package name — must match AndroidManifest.xml
-  static const _pkg = 'com.example.habit_tracker_alarm';
+  /// The Android package name — must match AndroidManifest.xml and build.gradle.kts
+  static const _pkg = 'com.habittracker.alarm';
 
   // ---------------------------------------------------------------------------
   // Playback
@@ -70,7 +70,8 @@ class AlarmAudioService {
         UrlSource('android.resource://$_pkg/raw/digital_beep'),
       );
       _isPlaying = true;
-    } catch (_) {
+    } catch (e) {
+      print('AlarmAudioService play error: $e');
       // Fail silently — the notification sound will still ring
     }
   }
