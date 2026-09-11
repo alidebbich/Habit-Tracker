@@ -307,7 +307,7 @@
       width: 100%;
       max-width: 700px;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 1px;
       background: var(--border);
       border-radius: 16px;
@@ -658,8 +658,8 @@
     </p>
 
     <div class="hero-ctas">
-      <a href="#download" class="btn btn-primary" id="hero-download-btn">
-        📲 Download Free
+      <a href="morning-routine.apk" download="morning-routine.apk" class="btn btn-primary" id="hero-download-btn">
+        📲 Download APK
       </a>
       <a href="#features" class="btn btn-ghost" id="hero-features-btn">
         See features ↓
@@ -668,16 +668,12 @@
 
     <div class="stats-strip" role="region" aria-label="App statistics">
       <div class="stat-item">
-        <span class="stat-val" id="stat-1">0</span>
-        <span class="stat-lbl">Daily Users</span>
+        <span class="stat-val" id="stat-downloads">0</span>
+        <span class="stat-lbl">Total Downloads</span>
       </div>
       <div class="stat-item">
-        <span class="stat-val">4.8 ⭐</span>
-        <span class="stat-lbl">App Rating</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-val" id="stat-3">0</span>
-        <span class="stat-lbl">Habits Tracked</span>
+        <span class="stat-val" id="stat-version">v1.0</span>
+        <span class="stat-lbl">Latest Version</span>
       </div>
     </div>
 
@@ -802,13 +798,16 @@
         Download Morning Routine free for Android. No account, no subscription — just better mornings.
       </p>
       <div class="hero-ctas reveal">
-        <a href="#" class="btn btn-primary" id="android-download-btn">
-          🤖 Download for Android
+        <a href="morning-routine.apk" download="morning-routine.apk" class="btn btn-primary" id="android-download-btn">
+          🤖 Download APK for Android
         </a>
-        <a href="#" class="btn btn-ghost" id="ios-download-btn">
+        <a href="#" class="btn btn-ghost" id="ios-download-btn" style="pointer-events: none; opacity: 0.5;">
           🍎 iOS — Coming Soon
         </a>
       </div>
+      <p class="cta-fine reveal" style="max-width: 480px; margin: 1.5rem auto; line-height: 1.6; color: rgba(237,229,200,0.6);">
+        <strong>Note:</strong> Since this is a direct APK download, Android will show a standard "Harmful app" or "Unknown sources" warning. This is expected. Simply tap <strong>"More details"</strong> and <strong>"Install anyway"</strong>, or enable "Install from unknown sources" in your settings.
+      </p>
       <p class="cta-fine reveal">
         Free forever <span>•</span> No account required <span>•</span> Privacy-first <span>•</span> No ads
       </p>
@@ -893,8 +892,36 @@
       navLinks.forEach(a => {
         a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--cream)' : '';
       });
-    }, { passive: true });
-  </script>
+    }, { passive: true    });
 
+    // ── Fetch Real GitHub Stats ──────────────────────────────────────────
+    async function fetchGitHubStats() {
+      try {
+        const response = await fetch('https://api.github.com/repos/alidebbich/Habit-Tracker/releases');
+        if (!response.ok) return;
+        const releases = await response.json();
+        
+        let totalDownloads = 0;
+        let latestVersion = 'v1.0.0';
+        
+        if (releases.length > 0) {
+          latestVersion = releases[0].tag_name;
+          for (const release of releases) {
+            for (const asset of release.assets) {
+              totalDownloads += asset.download_count;
+            }
+          }
+        }
+        
+        const dlElement = document.getElementById('stat-downloads');
+        const verElement = document.getElementById('stat-version');
+        if (dlElement) dlElement.innerText = totalDownloads;
+        if (verElement) verElement.innerText = latestVersion;
+      } catch (err) {
+        console.error('Failed to fetch GitHub stats', err);
+      }
+    }
+    fetchGitHubStats();
+  </script>
 </body>
 </html>
