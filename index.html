@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morning Routine — Wake Up. Build Habits. Own Your Morning.</title>
+  <meta name="description" content="The all-in-one alarm that won't stop until you've done something real. Merge your wake-up alarm and habit tracker into one seamless morning routine.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─── Design tokens ──────────────────────────────────────────────────── */
+    :root {
+      --void:    #0A0F06;
+      --void2:   #0F160A;
+      --glow:    #B5D96B;
+      --glow2:   #C8E87A;
+      --cream:   #EDE5C8;
+      --muted:   rgba(237,229,200,0.45);
+      --card:    rgba(255,255,255,0.04);
+      --border:  rgba(181,217,107,0.12);
+      --glow-a:  rgba(181,217,107,0.18);
+    }
+
+    /* ─── Reset ──────────────────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--void);
+      color: var(--cream);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--void2); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--glow); }
+
+    /* ─── Ambient background ─────────────────────────────────────────────── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-orbs::before {
+      content: '';
+      position: absolute;
+      width: 700px; height: 700px;
+      top: -200px; left: -200px;
+      background: radial-gradient(circle, rgba(181,217,107,0.07) 0%, transparent 65%);
+      animation: drift 25s ease-in-out infinite;
+    }
+
+    .bg-orbs::after {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      bottom: -100px; right: -100px;
+      background: radial-gradient(circle, rgba(181,217,107,0.05) 0%, transparent 65%);
+      animation: drift 30s ease-in-out infinite reverse;
+    }
+
+    /* Subtle dot grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: radial-gradient(circle, rgba(181,217,107,0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(30px, -20px) scale(1.05); }
+      66%       { transform: translate(-20px, 30px) scale(0.97); }
+    }
+
+    /* ─── Nav ────────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 1rem 2rem;
+      background: rgba(10,15,6,0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--cream);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-dot {
+      width: 8px; height: 8px;
+      background: var(--glow);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px var(--glow);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--cream); }
+
+    .nav-cta {
+      padding: 0.5rem 1.25rem;
+      background: var(--glow);
+      color: var(--void) !important;
+      border-radius: 20px;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      transition: box-shadow 0.2s, transform 0.2s !important;
+    }
+
+    .nav-cta:hover {
+      box-shadow: 0 0 20px rgba(181,217,107,0.4);
+      transform: translateY(-1px);
+    }
+
+    /* ─── Hero ───────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: rgba(181,217,107,0.08);
+      border: 1px solid rgba(181,217,107,0.25);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--glow);
+      margin-bottom: 2rem;
+      animation: fade-up 0.8s ease both;
+    }
+
+    .hero-title {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      animation: fade-up 0.8s ease 0.1s both;
+    }
+
+    .hero-title .line-glow {
+      color: var(--glow);
+      text-shadow: 0 0 60px rgba(181,217,107,0.3);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      animation: fade-up 0.8s ease 0.2s both;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 5rem;
+      animation: fade-up 0.8s ease 0.3s both;
+    }
+
+    /* Alarm clock animation */
+    .alarm-ring {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 3rem;
+      animation: fade-up 0.8s ease 0.05s both;
+    }
+
+    .alarm-ring svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      animation: spin 12s linear infinite;
+    }
+
+    .alarm-icon-wrap {
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      background: rgba(181,217,107,0.06);
+      border: 1.5px solid rgba(181,217,107,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      animation: pulse-icon 2s ease-in-out infinite;
+      box-shadow: 0 0 40px rgba(181,217,107,0.12), inset 0 0 40px rgba(181,217,107,0.04);
+    }
+
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes pulse-icon {
+      0%, 100% { box-shadow: 0 0 40px rgba(181,217,107,0.12), inset 0 0 40px rgba(181,217,107,0.04); }
+      50%       { box-shadow: 0 0 70px rgba(181,217,107,0.22), inset 0 0 60px rgba(181,217,107,0.08); }
+    }
+
+    /* ─── Buttons ─────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.75rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.25s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--glow);
+      color: var(--void);
+    }
+
+    .btn-primary:hover {
+      background: var(--glow2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(181,217,107,0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--cream);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(181,217,107,0.5);
+      color: var(--glow);
+      background: rgba(181,217,107,0.04);
+    }
+
+    /* ─── Stats strip ─────────────────────────────────────────────────────── */
+    .stats-strip {
+      width: 100%;
+      max-width: 700px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      animation: fade-up 0.8s ease 0.4s both;
+    }
+
+    .stat-item {
+      background: var(--card);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      transition: background 0.2s;
+    }
+
+    .stat-item:hover { background: rgba(181,217,107,0.05); }
+
+    .stat-val {
+      font-family: 'Fraunces', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--glow);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── Section shared ──────────────────────────────────────────────────── */
+    section { position: relative; z-index: 1; }
+
+    .section-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-pill {
+      display: inline-block;
+      padding: 0.3rem 0.9rem;
+      background: rgba(181,217,107,0.08);
+      border: 1px solid rgba(181,217,107,0.2);
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--glow);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      color: var(--cream);
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 500px;
+      line-height: 1.7;
+    }
+
+    /* ─── Features grid ───────────────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3.5rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(181,217,107,0.04), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(181,217,107,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(181,217,107,0.08);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-emoji {
+      font-size: 2rem;
+      margin-bottom: 1.25rem;
+      display: block;
+    }
+
+    .feature-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--cream);
+    }
+
+    .feature-body {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* Feature highlight tag */
+    .tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      background: rgba(181,217,107,0.1);
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--glow);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── How it works ────────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 3.5rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      padding-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 56px;
+      width: 2px;
+      height: calc(100% - 56px);
+      background: linear-gradient(to bottom, rgba(181,217,107,0.3), transparent);
+    }
+
+    .step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(181,217,107,0.08);
+      border: 1.5px solid rgba(181,217,107,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--glow);
+      flex-shrink: 0;
+    }
+
+    .step-text h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      padding-top: 0.9rem;
+      color: var(--cream);
+    }
+
+    .step-text p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ─── CTA banner ──────────────────────────────────────────────────────── */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .cta-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+
+    .cta-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(181,217,107,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .cta-section .section-title { margin-bottom: 1rem; }
+
+    .cta-section .section-sub {
+      max-width: 440px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .cta-fine {
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .cta-fine span { margin: 0 0.5rem; opacity: 0.4; }
+
+    /* ─── Footer ─────────────────────────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .footer-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--cream);
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      list-style: none;
+      margin-bottom: 1rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--cream); }
+
+    .footer-copy {
+      font-size: 0.75rem;
+      color: rgba(237,229,200,0.25);
+    }
+
+    /* ─── Scroll-in animations ────────────────────────────────────────────── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s cubic-bezier(0.22,1,0.36,1), transform 0.65s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ─── Responsive ─────────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .stats-strip { grid-template-columns: 1fr; border-radius: 12px; }
+      .alarm-ring { width: 160px; height: 160px; }
+      .alarm-icon-wrap { font-size: 3.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient BG -->
+  <div class="bg-orbs" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- ── Navigation ──────────────────────────────────────────────────────── -->
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        Morning Routine
+      </div>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#download" class="nav-cta">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── Hero ────────────────────────────────────────────────────────────── -->
+  <header class="hero" id="home">
+
+    <div class="hero-badge">⏰ Android App — Free Download</div>
+
+    <!-- Animated clock -->
+    <div class="alarm-ring" aria-hidden="true">
+      <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Dashed rotating ring -->
+        <circle cx="110" cy="110" r="105" stroke="rgba(181,217,107,0.25)"
+          stroke-width="1.5" stroke-dasharray="8 10" stroke-linecap="round"/>
+      </svg>
+      <div class="alarm-icon-wrap">⏰</div>
+    </div>
+
+    <h1 class="hero-title">
+      Wake Up.<br>
+      <span class="line-glow">Build Habits.</span><br>
+      Own Your Morning.
+    </h1>
+
+    <p class="hero-sub">
+      Stop juggling Alarmy and a habit tracker. Morning Routine combines your wake-up alarm
+      with daily habits in one seamless flow — alarm won't stop until you've done something real.
+    </p>
+
+    <div class="hero-ctas">
+      <a href="morning-routine.apk" download="morning-routine.apk" class="btn btn-primary" id="hero-download-btn">
+        📲 Download APK
+      </a>
+      <a href="#features" class="btn btn-ghost" id="hero-features-btn">
+        See features ↓
+      </a>
+    </div>
+
+    <div class="stats-strip" role="region" aria-label="App statistics">
+      <div class="stat-item">
+        <span class="stat-val" id="stat-1">0</span>
+        <span class="stat-lbl">Daily Users</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val">4.8 ⭐</span>
+        <span class="stat-lbl">App Rating</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" id="stat-3">0</span>
+        <span class="stat-lbl">Habits Tracked</span>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ── Features ────────────────────────────────────────────────────────── -->
+  <section id="features">
+    <div class="section-wrap">
+      <div class="reveal" style="text-align:center;margin-bottom:0.5rem;">
+        <span class="section-pill">What's inside</span>
+      </div>
+      <h2 class="section-title reveal" style="text-align:center;max-width:600px;margin:0 auto 1rem;">
+        Everything you need.<br>Nothing you don't.
+      </h2>
+      <p class="section-sub reveal" style="text-align:center;margin:0 auto;">
+        One app. One streak. One morning routine that actually sticks.
+      </p>
+
+      <div class="features-grid">
+
+        <div class="feature-card reveal" id="feature-alarm">
+          <span class="feature-emoji">⏰</span>
+          <h3 class="feature-name">Smart Mission Alarm</h3>
+          <p class="feature-body">The alarm won't stop until you solve a math problem, type a phrase, or complete your morning habit. No more snooze-loop.</p>
+          <span class="tag">Won't let you cheat</span>
+        </div>
+
+        <div class="feature-card reveal" id="feature-habits">
+          <span class="feature-emoji">🔗</span>
+          <h3 class="feature-name">Linked Habits</h3>
+          <p class="feature-body">Connect an alarm to any habit. Completing the mission auto-checks your habit for the day — alarm off, streak on.</p>
+          <span class="tag">One tap to dismiss</span>
+        </div>
+
+        <div class="feature-card reveal" id="feature-custom-sound">
+          <span class="feature-emoji">🎵</span>
+          <h3 class="feature-name">Pick Any Song</h3>
+          <p class="feature-body">Use built-in alarm tones or pick any song from your phone's music library as your wake-up sound. MP3, WAV, M4A supported.</p>
+          <span class="tag">Your music library</span>
+        </div>
+
+        <div class="feature-card reveal" id="feature-stats">
+          <span class="feature-emoji">📈</span>
+          <h3 class="feature-name">Streaks & Stats</h3>
+          <p class="feature-body">30-day heatmap calendar, current streak, best streak, and completion percentage for every habit.</p>
+          <span class="tag">Visual progress</span>
+        </div>
+
+        <div class="feature-card reveal" id="feature-wakeup">
+          <span class="feature-emoji">📱</span>
+          <h3 class="feature-name">Wakes Locked Phone</h3>
+          <p class="feature-body">The alarm turns your screen on even when the phone is locked and silent mode is on — real alarm behaviour, not just a notification.</p>
+          <span class="tag">Full-screen alarm</span>
+        </div>
+
+        <div class="feature-card reveal" id="feature-repeat">
+          <span class="feature-emoji">🗓️</span>
+          <h3 class="feature-name">Flexible Scheduling</h3>
+          <p class="feature-body">Set alarms for every day or specific weekdays. Multiple alarms for different routines — all managed in one place.</p>
+          <span class="tag">Daily or custom days</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How it works ─────────────────────────────────────────────────────── -->
+  <section id="how" style="background: rgba(181,217,107,0.02); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+    <div class="section-wrap">
+      <div class="reveal" style="text-align:center;margin-bottom:0.5rem;">
+        <span class="section-pill">How it works</span>
+      </div>
+      <h2 class="section-title reveal" style="text-align:center;max-width:500px;margin:0 auto 0.5rem;">
+        Four steps to a<br>better morning
+      </h2>
+      <p class="section-sub reveal" style="text-align:center;margin:0 auto 0;">
+        Set it up once. Let it run every morning.
+      </p>
+
+      <div class="steps">
+        <div class="step reveal" id="step-1">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <h3>Set your alarm time</h3>
+            <p>Pick a time, choose which days, and select your alarm sound — including any song from your phone.</p>
+          </div>
+        </div>
+        <div class="step reveal" id="step-2">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <h3>Choose a dismiss mission</h3>
+            <p>Solve a math problem, type a phrase, or link it to a morning habit. The alarm won't stop until you're done.</p>
+          </div>
+        </div>
+        <div class="step reveal" id="step-3">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <h3>Wake up. Complete the mission.</h3>
+            <p>The screen lights up even when locked. Complete the mission to dismiss. Your habit is auto-checked.</p>
+          </div>
+        </div>
+        <div class="step reveal" id="step-4">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <h3>Watch your streak grow</h3>
+            <p>Every morning adds to your streak. Track progress on the 30-day heatmap. One morning at a time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ─────────────────────────────────────────────────────────────── -->
+  <section class="cta-section" id="download">
+    <div class="cta-glow" aria-hidden="true"></div>
+    <div class="cta-inner">
+      <span class="section-pill reveal">Free Download</span>
+      <h2 class="section-title reveal">
+        Ready to own<br>your mornings?
+      </h2>
+      <p class="section-sub reveal">
+        Download Morning Routine free for Android. No account, no subscription — just better mornings.
+      </p>
+      <div class="hero-ctas reveal">
+        <a href="morning-routine.apk" download="morning-routine.apk" class="btn btn-primary" id="android-download-btn">
+          🤖 Download APK for Android
+        </a>
+        <a href="#" class="btn btn-ghost" id="ios-download-btn" style="pointer-events: none; opacity: 0.5;">
+          🍎 iOS — Coming Soon
+        </a>
+      </div>
+      <p class="cta-fine reveal" style="max-width: 480px; margin: 1.5rem auto; line-height: 1.6; color: rgba(237,229,200,0.6);">
+        <strong>Note:</strong> Since this is a direct APK download, Android will show a standard "Harmful app" or "Unknown sources" warning. This is expected. Simply tap <strong>"More details"</strong> and <strong>"Install anyway"</strong>, or enable "Install from unknown sources" in your settings.
+      </p>
+      <p class="cta-fine reveal">
+        Free forever <span>•</span> No account required <span>•</span> Privacy-first <span>•</span> No ads
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-logo">Morning Routine</div>
+    <ul class="footer-links">
+      <li><a href="#">Privacy Policy</a></li>
+      <li><a href="#">Terms of Service</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+    <p class="footer-copy">© 2026 Morning Routine. All rights reserved.</p>
+  </footer>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────────── -->
+  <script>
+    // ── Scroll-reveal ───────────────────────────────────────────────────────
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          // Stagger siblings inside same parent
+          const siblings = [...entry.target.parentElement.querySelectorAll('.reveal')];
+          const idx = siblings.indexOf(entry.target);
+          entry.target.style.transitionDelay = `${idx * 80}ms`;
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(el => observer.observe(el));
+
+    // ── Stat counter animation ──────────────────────────────────────────────
+    const countUp = (el, target, suffix = '', decimals = 0) => {
+      const duration = 1800;
+      const start = performance.now();
+      const run = (now) => {
+        const p = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const val = target * ease;
+        el.textContent = (decimals > 0 ? val.toFixed(decimals) : Math.floor(val).toLocaleString()) + suffix;
+        if (p < 1) requestAnimationFrame(run);
+      };
+      requestAnimationFrame(run);
+    };
+
+    let counted = false;
+    const statsObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !counted) {
+        counted = true;
+        countUp(document.getElementById('stat-1'), 2400, '+');
+        countUp(document.getElementById('stat-3'), 18000, '+');
+      }
+    }, { threshold: 0.3 });
+
+    const statsEl = document.querySelector('.stats-strip');
+    if (statsEl) statsObserver.observe(statsEl);
+
+    // ── Smooth scroll ───────────────────────────────────────────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    // ── Nav active highlight on scroll ──────────────────────────────────────
+    const sections = document.querySelectorAll('section[id], header[id]');
+    const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 120) current = s.id;
+      });
+      navLinks.forEach(a => {
+        a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--cream)' : '';
+      });
+    }, { passive: true });
+  </script>
+
+</body>
+</html>
