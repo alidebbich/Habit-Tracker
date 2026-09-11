@@ -1,4 +1,4 @@
-package com.example.habit_tracker_alarm
+package com.habittracker.alarm
 
 import android.app.KeyguardManager
 import android.content.Context
