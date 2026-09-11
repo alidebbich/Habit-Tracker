@@ -200,7 +200,6 @@ class AlarmService {
         debugPrint('AlarmService: Scheduled inexact alarm for ${alarm.label}');
       } catch (e2) {
         debugPrint('AlarmService: Could not schedule alarm: $e2');
-        rethrow;
       }
     }
   }

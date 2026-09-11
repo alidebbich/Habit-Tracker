@@ -160,13 +160,33 @@ class _AddAlarmSheetState extends State<AddAlarmSheet> {
         sound: _sound,
       );
 
+      // Step 1: Always save to database first
       if (widget.existingAlarm != null) {
         await AlarmRepository().updateAlarm(alarm);
       } else {
         await AlarmRepository().insertAlarm(alarm);
       }
-      
-      await AlarmService().scheduleAlarm(alarm);
+
+      // Step 2: Try to schedule — if it fails, the alarm is still saved
+      // and will be rescheduled on next app launch
+      try {
+        await AlarmService().scheduleAlarm(alarm);
+      } catch (scheduleError) {
+        // Alarm is saved but notification scheduling failed
+        // (e.g. permission not yet granted). Show a warning.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                '⚠️ Alarm saved, but scheduling failed. Please grant "Alarms & reminders" permission in Settings.',
+              ),
+              backgroundColor: Colors.orange[800],
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+
       widget.onSaved();
       if (mounted) Navigator.pop(context);
     } catch (e) {
