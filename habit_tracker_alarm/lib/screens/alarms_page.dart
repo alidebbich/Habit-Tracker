@@ -58,8 +58,19 @@ class _AlarmsPageState extends State<AlarmsPage> {
   }
 
   Future<void> _deleteAlarm(Alarm alarm) async {
-    await AlarmService().cancelAlarm(alarm.id);
-    await AlarmRepository().deleteAlarm(alarm.id);
+    try {
+      await AlarmService().cancelAlarm(alarm.id);
+      await AlarmRepository().deleteAlarm(alarm.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting alarm: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
     _load();
   }
 

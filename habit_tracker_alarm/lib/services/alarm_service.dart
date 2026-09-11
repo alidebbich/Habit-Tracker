@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -8,13 +9,12 @@ import '../data/alarm_repository.dart';
 import '../data/habit_repository.dart';
 
 // ---------------------------------------------------------------------------
-// Top-level background callback required by flutter_local_notifications.
-// Must be annotated so the Dart VM keeps it in the compiled output.
+// Top-level background callback — MUST be a top-level function and annotated.
 // ---------------------------------------------------------------------------
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
-  // When the app is killed and a notification is tapped, Android relaunches
-  // the app. getNotificationAppLaunchDetails() in init() then handles routing.
+  // App is in killed state; relaunched by the system.
+  // getNotificationAppLaunchDetails() in init() will handle routing.
 }
 
 class AlarmService {
@@ -27,6 +27,8 @@ class AlarmService {
   final AlarmRepository _alarmRepo = AlarmRepository();
   final HabitRepository _habitRepo = HabitRepository();
 
+  bool _initialized = false;
+
   /// Set this callback so the UI layer can navigate to AlarmDismissScreen.
   void Function(String alarmId)? onAlarmFired;
 
@@ -35,6 +37,8 @@ class AlarmService {
   // ---------------------------------------------------------------------------
 
   Future<void> init() async {
+    if (_initialized) return;
+
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -48,8 +52,9 @@ class AlarmService {
           onBackgroundNotificationResponse,
     );
 
-    // Check if the app was launched via fullScreenIntent / notification from
-    // the lock screen — if so fire immediately once Flutter is ready.
+    _initialized = true;
+
+    // Check if the app was launched via fullScreenIntent / notification tap.
     final launchDetails =
         await _notifications.getNotificationAppLaunchDetails();
     if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
@@ -61,10 +66,7 @@ class AlarmService {
       }
     }
 
-    // Request permissions that are required for reliable alarm delivery.
     await _requestPermissions();
-
-    // Re-schedule any saved alarms after a restart.
     await _rescheduleExistingAlarms();
   }
 
@@ -82,13 +84,9 @@ class AlarmService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin == null) return;
-
-    // Android 13+: POST_NOTIFICATIONS (shows a dialog — appropriate at startup)
     await androidPlugin.requestNotificationsPermission();
   }
 
-  /// Returns true if exact alarms can be scheduled.
-  /// On Android 12+ the user must grant this in system settings.
   Future<bool> canScheduleExactAlarms() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -101,8 +99,6 @@ class AlarmService {
     }
   }
 
-  /// Opens the "Alarms & Reminders" system settings screen so the user can
-  /// grant SCHEDULE_EXACT_ALARM (required on Android 12+).
   Future<void> requestExactAlarmPermission() async {
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -112,83 +108,38 @@ class AlarmService {
     } catch (_) {}
   }
 
-  /// Returns true if USE_FULL_SCREEN_INTENT is granted.
-  /// On Android 14+ users may need to grant this via Special App Access.
-  /// Note: flutter_local_notifications does not expose a direct API for this,
-  /// so we return true and guide users manually via the banner text.
-  Future<bool> hasFullScreenIntentPermission() async {
-    // The permission check API varies by plugin version.
-    // Return true by default — the banner will still show build guidance.
-    return true;
-  }
+  Future<bool> hasFullScreenIntentPermission() async => true;
 
   // ---------------------------------------------------------------------------
   // Scheduling
   // ---------------------------------------------------------------------------
 
   Future<void> _rescheduleExistingAlarms() async {
-    final alarms = await _alarmRepo.getAlarms();
-    for (final alarm in alarms) {
-      if (alarm.isEnabled) await scheduleAlarm(alarm);
+    try {
+      final alarms = await _alarmRepo.getAlarms();
+      for (final alarm in alarms) {
+        if (alarm.isEnabled) {
+          await scheduleAlarm(alarm);
+        }
+      }
+    } catch (e) {
+      debugPrint('AlarmService: Error rescheduling alarms: $e');
     }
   }
 
   Future<void> scheduleAlarm(Alarm alarm) async {
-    final int notifId = alarm.id.hashCode.abs() % 0x7FFFFFFF;
+    final int notifId = _notifId(alarm.id);
+    // Always cancel first to avoid duplicate notifications
+    await _notifications.cancel(notifId);
+
     final DateTime nextTrigger = _getNextTriggerDate(alarm);
     final tz.TZDateTime scheduledDate =
         tz.TZDateTime.from(nextTrigger, tz.local);
 
-    // Only use built-in raw resource names as the notification sound.
-    // Custom file paths are played by AlarmAudioService when the dismiss
-    // screen opens — they cannot be used as a RawResourceAndroidNotificationSound.
     final bool isBuiltIn = _isBuiltInSound(alarm.sound);
     final String? soundName =
         (isBuiltIn && alarm.sound != 'default') ? alarm.sound : null;
 
-    // Attempt 1: with built-in sound + exact alarm
-    try {
-      await _scheduleInternal(
-        notifId: notifId,
-        alarm: alarm,
-        scheduledDate: scheduledDate,
-        soundName: soundName,
-        exact: true,
-      );
-      return;
-    } catch (_) {}
-
-    // Attempt 2: default sound + exact alarm
-    try {
-      await _scheduleInternal(
-        notifId: notifId,
-        alarm: alarm,
-        scheduledDate: scheduledDate,
-        soundName: null,
-        exact: true,
-      );
-      return;
-    } catch (_) {}
-
-    // Attempt 3: default sound + inexact (fallback if permission denied)
-    try {
-      await _scheduleInternal(
-        notifId: notifId,
-        alarm: alarm,
-        scheduledDate: scheduledDate,
-        soundName: null,
-        exact: false,
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _scheduleInternal({
-    required int notifId,
-    required Alarm alarm,
-    required tz.TZDateTime scheduledDate,
-    required String? soundName,
-    required bool exact,
-  }) async {
     final channelId =
         soundName != null ? 'alarm_channel_$soundName' : 'alarm_channel_default';
 
@@ -208,59 +159,102 @@ class AlarmService {
       category: AndroidNotificationCategory.alarm,
       audioAttributesUsage: AudioAttributesUsage.alarm,
       visibility: NotificationVisibility.public,
-      // FLAG_INSISTENT (4): keeps looping the sound/vibration until cleared
       additionalFlags: Int32List.fromList(<int>[4]),
+      ongoing: true,
     );
 
-    await _notifications.zonedSchedule(
-      notifId,
-      '⏰ ${alarm.label}',
-      _missionDescription(alarm),
-      scheduledDate,
-      NotificationDetails(android: androidDetails),
-      androidScheduleMode: exact
-          ? AndroidScheduleMode.exactAllowWhileIdle
-          : AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: alarm.weekdays.isEmpty
-          ? DateTimeComponents.time
-          : DateTimeComponents.dayOfWeekAndTime,
-      payload: alarm.id,
-    );
+    // Try with exact alarm first, fall back to inexact
+    try {
+      await _notifications.zonedSchedule(
+        notifId,
+        '⏰ ${alarm.label}',
+        _missionDescription(alarm),
+        scheduledDate,
+        NotificationDetails(android: androidDetails),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: alarm.weekdays.isEmpty
+            ? DateTimeComponents.time
+            : DateTimeComponents.dayOfWeekAndTime,
+        payload: alarm.id,
+      );
+      debugPrint('AlarmService: Scheduled exact alarm at $scheduledDate for ${alarm.label}');
+    } catch (e) {
+      debugPrint('AlarmService: Exact alarm failed ($e), trying inexact...');
+      try {
+        await _notifications.zonedSchedule(
+          notifId,
+          '⏰ ${alarm.label}',
+          _missionDescription(alarm),
+          scheduledDate,
+          NotificationDetails(android: androidDetails),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: alarm.weekdays.isEmpty
+              ? DateTimeComponents.time
+              : DateTimeComponents.dayOfWeekAndTime,
+          payload: alarm.id,
+        );
+        debugPrint('AlarmService: Scheduled inexact alarm for ${alarm.label}');
+      } catch (e2) {
+        debugPrint('AlarmService: Could not schedule alarm: $e2');
+        rethrow;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cancel / Delete
+  // ---------------------------------------------------------------------------
+
+  Future<void> cancelAlarm(String alarmId) async {
+    final int notifId = _notifId(alarmId);
+    try {
+      await _notifications.cancel(notifId);
+      debugPrint('AlarmService: Cancelled notification $notifId');
+    } catch (e) {
+      debugPrint('AlarmService: Error cancelling notification: $e');
+    }
+  }
+
+  Future<void> cancelAll() async {
+    try {
+      await _notifications.cancelAll();
+    } catch (e) {
+      debugPrint('AlarmService: Error cancelling all notifications: $e');
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Mission completion
   // ---------------------------------------------------------------------------
 
-  /// Auto-checks the linked morning-anchor habit and cancels the alarm.
-  /// Called from AlarmDismissScreen when the user completes their mission.
   Future<void> completeHabitMission(Alarm alarm) async {
     if (alarm.associatedHabitId != null) {
-      final habits = await _habitRepo.getHabits();
-      final matches =
-          habits.where((h) => h.id == alarm.associatedHabitId).toList();
-      if (matches.isNotEmpty) {
-        final habit = matches.first;
-        if (!habit.isCompletedOn(DateTime.now())) {
-          await _habitRepo.updateHabit(habit.toggleCompletion(DateTime.now()));
+      try {
+        final habits = await _habitRepo.getHabits();
+        final matches =
+            habits.where((h) => h.id == alarm.associatedHabitId).toList();
+        if (matches.isNotEmpty) {
+          final habit = matches.first;
+          if (!habit.isCompletedOn(DateTime.now())) {
+            await _habitRepo.updateHabit(habit.toggleCompletion(DateTime.now()));
+          }
         }
+      } catch (e) {
+        debugPrint('AlarmService: Error completing habit mission: $e');
       }
     }
     await cancelAlarm(alarm.id);
   }
 
-  Future<void> cancelAlarm(String alarmId) async {
-    final int notifId = alarmId.hashCode.abs() % 0x7FFFFFFF;
-    await _notifications.cancel(notifId);
-  }
-
-  Future<void> cancelAll() async => _notifications.cancelAll();
-
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  int _notifId(String alarmId) => alarmId.hashCode.abs() % 0x7FFFFFFF;
 
   bool _isBuiltInSound(String sound) {
     if (sound == 'default') return true;

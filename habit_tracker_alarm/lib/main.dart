@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,10 +17,16 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Required by flutter_local_notifications zonedSchedule
+  // Initialize timezone data — required by flutter_local_notifications.
+  // Fall back to UTC if device timezone cannot be detected.
   tz.initializeTimeZones();
-  final tzInfo = await FlutterTimezone.getLocalTimezone();
-  tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
+  try {
+    final tzInfo = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
+  } catch (e) {
+    debugPrint('Timezone detection failed, falling back to UTC: $e');
+    tz.setLocalLocation(tz.UTC);
+  }
 
   final alarmService = AlarmService();
   await alarmService.init();
