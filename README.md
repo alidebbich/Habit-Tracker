@@ -103,7 +103,8 @@ lib/
 ├── services/
 │   ├── alarm_service.dart     # flutter_local_notifications scheduling,
 │   │                          # permission requests, exact alarm handling
-│   └── alarm_audio_service.dart # audioplayers wrapper for alarm sounds
+│   ├── alarm_audio_service.dart # audioplayers wrapper for alarm sounds
+│   └── miui_permission_service.dart # Handles Xiaomi/Redmi background restrictions
 │
 ├── providers/
 │   └── alarm_provider.dart    # Riverpod state for alarm list
@@ -168,8 +169,8 @@ android/
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/morning-routine.git
-cd morning-routine/habit_tracker_alarm
+git clone https://github.com/alidebbich/Habit-Tracker.git
+cd Habit-Tracker/habit_tracker_alarm
 
 # Install dependencies
 flutter pub get
@@ -204,6 +205,8 @@ The app requests the following permissions at runtime:
 > **Android 14+ Note:** You may need to manually grant **"Display over other apps"** in  
 > *Settings → Apps → Momentum → Special app access → Display over other apps*  
 > for the full-screen alarm to appear over the lock screen.
+
+> **Xiaomi/Redmi (MIUI) Note:** MIUI aggressively kills background processes. The app includes a built-in setup screen for these devices to guide you to enable **AutoStart**, remove **Battery Restrictions**, and allow **Background Pop-up Windows**.
 
 ---
 
