@@ -22,7 +22,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: Colors.indigo,
       title: 'One streak,\nnot two apps.',
       body:
-          'Stop juggling Alarmy and your habit tracker. Morning Routine combines your wake-up alarm with daily habits in one seamless flow.',
+          'Stop juggling Alarmy and your habit tracker. Momentum combines your wake-up alarm with daily habits in one seamless flow.',
     ),
     _PageData(
       icon: Icons.alarm,

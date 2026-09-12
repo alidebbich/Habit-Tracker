@@ -83,7 +83,7 @@ class HabitAlarmApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'Morning Routine',
+      title: 'Momentum',
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(

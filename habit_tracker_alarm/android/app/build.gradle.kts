@@ -51,6 +51,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // Set to true only when you're ready to test with ProGuard fully active.
+            // proguard-rules.pro already has all keep rules prepared when you do.
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

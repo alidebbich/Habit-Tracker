@@ -17,7 +17,7 @@
         android:maxSdkVersion="32" />
 
     <application
-        android:label="habit_tracker_alarm"
+        android:label="Momentum"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -46,8 +46,11 @@
             </intent-filter>
         </activity>
         
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+        <!-- exported="true" is REQUIRED on Android 12+ (API 31+): AlarmManager fires
+             this receiver from outside the app process; false silently blocks it in release builds. -->
+        <receiver android:exported="true" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="true" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+        <receiver android:exported="true" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>

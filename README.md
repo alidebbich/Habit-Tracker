@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⏰ Morning Routine
+# ⏰ Momentum
 
 ### Wake up. Build habits. Own your morning.
 
@@ -15,9 +15,9 @@
 
 ---
 
-## 📖 What is Morning Routine?
+## 📖 What is Momentum?
 
-Most people use two apps — one for alarms, one for habits. **Morning Routine** merges them.
+Most people use two apps — one for alarms, one for habits. **Momentum** merges them.
 
 Set an alarm. Link it to a habit. The alarm **won't stop** until you complete a morning mission (solve a math problem, type a phrase, or check off your habit). Wake up forced into your routine, streak growing automatically.
 
@@ -202,7 +202,7 @@ The app requests the following permissions at runtime:
 | `VIBRATE` | Alarm vibration |
 
 > **Android 14+ Note:** You may need to manually grant **"Display over other apps"** in  
-> *Settings → Apps → Morning Routine → Special app access → Display over other apps*  
+> *Settings → Apps → Momentum → Special app access → Display over other apps*  
 > for the full-screen alarm to appear over the lock screen.
 
 ---
@@ -265,7 +265,7 @@ docs:     Documentation changes
 ```text
 MIT License
 
-Copyright (c) 2026 Morning Routine
+Copyright (c) 2026 Momentum
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

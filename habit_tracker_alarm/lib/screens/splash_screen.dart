@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
+import '../services/miui_permission_service.dart';
 
 // =============================================================================
 // SplashScreen — shown on every cold-start while the app initialises.
@@ -73,6 +74,13 @@ class _SplashScreenState extends State<SplashScreen>
         },
       ),
     );
+
+    // Show MIUI setup dialog on Xiaomi/Redmi devices after navigation settles
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        MiuiPermissionService.showIfNeeded(context);
+      }
+    });
   }
 
   @override
@@ -105,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
 
               // ── App name ─────────────────────────────────────────────────
               const Text(
-                'Morning Routine',
+                'Momentum',
                 style: TextStyle(
                   color: _cream,
                   fontSize: 30,
